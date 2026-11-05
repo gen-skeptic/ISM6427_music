@@ -218,16 +218,17 @@ async function loadExamples() {
       model: x.model || "V6",
       instrumental: Boolean(x.instrumental),
       status: "SUCCESS",
-      tracks: [{
-        id: `example-${i}`,
-        title: x.title || "Example track",
-        tags: x.tags || "",
-        lyrics: x.lyrics || "",
-        duration: x.duration || null,
-        audioUrl: x.src,
-        imageUrl: x.image || "",
+      // Either one track inline ({title, src, ...}) or several in `tracks`.
+      tracks: (Array.isArray(x.tracks) ? x.tracks : [x]).map((t, j) => ({
+        id: `example-${i}-${j}`,
+        title: t.title || "Example track",
+        tags: t.tags || "",
+        lyrics: t.lyrics || "",
+        duration: t.duration || null,
+        audioUrl: t.src,
+        imageUrl: t.image || "",
         local: true,
-      }],
+      })),
     }));
     render();
   } catch { /* no examples */ }

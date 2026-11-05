@@ -8,7 +8,7 @@ Generate original songs from a short description or your own lyrics, powered by 
 - Instrumental toggle and model picker (V6, V6 Mini, V6 Wild).
 - Live progress (queued → writing → preview → done), with a streaming preview as soon as the first take is ready.
 - Built-in player, lyrics view and one-click MP3 download (saved as a file, not opened in a tab). Track history is saved in the browser.
-- Example tracks ship with the app: add an MP3 to `public/examples/` and an entry to `public/examples/examples.json` (`title`, `label`, `tags`, `src`, `duration`, `lyrics`).
+- Example tracks ship with the app: add an MP3 to `public/examples/` and an entry to `public/examples/examples.json` (a `label` plus a `tracks` list of `title`, `tags`, `src`, `duration`, `lyrics`).
 - Remaining SunoAPI credit balance in the header.
 
 ## How it works
