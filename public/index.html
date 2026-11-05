@@ -1,150 +1,173 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="mocha">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Waveform Studio</title>
   <meta name="description" content="Generate original songs with AI from a short description or your own lyrics." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23ff5c39'/><path d='M7 16h3l2-6 4 12 3-9 2 3h4' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231e1e2e'/><path d='M6 16h4l2-6 4 12 3-9 2 3h5' stroke='%2389b4fa' stroke-width='2' fill='none' stroke-linecap='square'/></svg>" />
+  <script>
+    try { const t = localStorage.getItem("waveform.theme"); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <link rel="stylesheet" href="dautel.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 32 32"><path d="M7 16h3l2-6 4 12 3-9 2 3h4" /></svg>
-      </span>
-      <span>Waveform Studio</span>
-    </div>
-    <div class="credits" id="credits" title="Remaining SunoAPI credits">
-      <span class="dot"></span><span id="creditsValue">— credits</span>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="product nav" href="/"><span class="prompt" aria-hidden="true">&gt;_</span> waveform.studio</a>
+      <div class="header-tools">
+        <div class="topology-status mint credits" id="credits" title="Remaining SunoAPI credits">
+          <i id="creditsDot"></i><span id="creditsValue">credits —</span>
+        </div>
+        <label class="theme-pick">
+          <span class="sr-only">Theme</span>
+          <select id="theme" class="micro">
+            <option value="mocha">Mocha</option>
+            <option value="macchiato">Macchiato</option>
+            <option value="frappe">Frappé</option>
+            <option value="latte">Latte</option>
+            <option value="dautel">Dautel</option>
+          </select>
+        </label>
+      </div>
     </div>
   </header>
 
-  <main class="layout">
-    <section class="panel composer" aria-labelledby="composerTitle">
-      <h1 id="composerTitle">Make a song</h1>
-      <p class="sub">Describe a vibe, or bring your own lyrics. Each request returns two takes.</p>
-
-      <div class="tabs" role="tablist">
-        <button role="tab" class="tab active" data-mode="simple" aria-selected="true">Simple</button>
-        <button role="tab" class="tab" data-mode="custom" aria-selected="false">Custom</button>
-      </div>
-
-      <form id="form" novalidate>
-        <!-- Simple mode -->
-        <div class="mode-simple">
-          <label class="field">
-            <span class="label">Song description <small><span id="promptCount">0</span>/3000</small></span>
-            <textarea id="prompt" rows="5" maxlength="3000" placeholder="An upbeat summer pop song about a road trip with friends, catchy chorus, bright synths"></textarea>
-          </label>
-          <div class="chips" id="ideaChips" aria-label="Example ideas"></div>
-        </div>
-
-        <!-- Custom mode -->
-        <div class="mode-custom" hidden>
-          <label class="field">
-            <span class="label">Title <small>optional · max 80</small></span>
-            <input id="title" type="text" maxlength="80" placeholder="Midnight Drive" />
-          </label>
-          <label class="field">
-            <span class="label">Style <small><span id="styleCount">0</span>/1000</small></span>
-            <input id="style" type="text" maxlength="1000" placeholder="synthwave, female vocals, 110 bpm, dreamy" />
-          </label>
-          <div class="chips" id="styleChips" aria-label="Style suggestions"></div>
-          <label class="field lyrics-field">
-            <span class="label">Lyrics <small><span id="lyricsCount">0</span>/5000</small></span>
-            <textarea id="lyrics" rows="8" maxlength="5000" placeholder="[Verse]&#10;Neon on the windshield, city fading out&#10;&#10;[Chorus]&#10;We keep driving..."></textarea>
-          </label>
-
-          <details class="advanced">
-            <summary>Advanced controls</summary>
-            <label class="field">
-              <span class="label">Exclude styles</span>
-              <input id="negativeTags" type="text" maxlength="1000" placeholder="heavy metal, distorted guitars" />
-            </label>
-            <div class="grid2">
-              <label class="field">
-                <span class="label">Vocals</span>
-                <select id="vocalGender">
-                  <option value="">Any</option>
-                  <option value="f">Female</option>
-                  <option value="m">Male</option>
-                </select>
-              </label>
-              <label class="field">
-                <span class="label">Variety</span>
-                <select id="variety">
-                  <option value="0">Off — exact style</option>
-                  <option value="1" selected>Normal</option>
-                  <option value="2">High</option>
-                  <option value="3">Extra</option>
-                  <option value="4">Max</option>
-                </select>
-              </label>
-            </div>
-            <label class="field range">
-              <span class="label">Length <output id="durationOut">auto</output></span>
-              <input id="duration" type="range" min="0" max="360" step="10" value="0" />
-            </label>
-            <label class="field range">
-              <span class="label">Style adherence <output id="styleWeightOut">0.65</output></span>
-              <input id="styleWeight" type="range" min="0" max="1" step="0.05" value="0.65" />
-            </label>
-            <label class="field range">
-              <span class="label">Weirdness <output id="weirdOut">0.50</output></span>
-              <input id="weirdness" type="range" min="0" max="1" step="0.05" value="0.5" />
-            </label>
-          </details>
-        </div>
-
-        <div class="row">
-          <label class="toggle">
-            <input id="instrumental" type="checkbox" />
-            <span class="track"><span class="thumb"></span></span>
-            Instrumental
-          </label>
-          <label class="field model">
-            <span class="sr-only">Model</span>
-            <select id="model">
-              <option value="V6" selected>V6 · best quality</option>
-              <option value="V6_MINI">V6 Mini · fastest</option>
-              <option value="V6_WILD">V6 Wild · experimental</option>
-            </select>
-          </label>
-        </div>
-
-        <p class="error" id="error" role="alert" hidden></p>
-
-        <button class="primary" id="submit" type="submit">
-          <span class="btn-label">Generate</span>
-          <span class="spinner" aria-hidden="true"></span>
-        </button>
-      </form>
+  <main class="container">
+    <section class="hero">
+      <h1>Make music <em>on demand</em>.</h1>
+      <p class="lead">Describe a sound, or bring your own lyrics. Every request returns two takes you can stream, read and download.</p>
     </section>
 
-    <section class="panel library" aria-labelledby="libTitle">
-      <div class="lib-head">
-        <h2 id="libTitle">Your tracks</h2>
-        <button class="ghost small" id="clearAll" hidden>Clear</button>
-      </div>
-      <div id="jobs"></div>
-      <div class="empty" id="empty">
-        <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-        <p>Your songs will show up here. A first preview usually arrives in under a minute; the full tracks follow shortly after.</p>
-      </div>
-      <p class="note">Generated files are kept by the provider for 14 days. Download anything you want to keep.</p>
-    </section>
+    <div class="layout">
+      <section class="panel-cut composer" aria-labelledby="composerTitle">
+        <div class="section-heading compact">
+          <h2 id="composerTitle"><span aria-hidden="true">&gt;_</span> Compose</h2>
+        </div>
+
+        <div class="segmented" role="tablist" aria-label="Mode">
+          <button role="tab" class="tab active" data-mode="simple" aria-selected="true">Simple</button>
+          <button role="tab" class="tab" data-mode="custom" aria-selected="false">Custom</button>
+        </div>
+
+        <form id="form" class="contact-form studio-form" novalidate>
+          <!-- Simple mode -->
+          <div class="mode-simple full-field">
+            <label class="full-field">
+              <span>Song description <em class="count"><span id="promptCount">0</span>/3000</em></span>
+              <textarea id="prompt" maxlength="3000" placeholder="An upbeat summer pop song about a road trip with friends, catchy chorus, bright synths"></textarea>
+            </label>
+            <div class="tags" id="ideaChips" aria-label="Example ideas"></div>
+          </div>
+
+          <!-- Custom mode -->
+          <div class="mode-custom full-field" hidden>
+            <label class="full-field">
+              <span>Title <em class="count">optional · max 80</em></span>
+              <input id="title" type="text" maxlength="80" placeholder="Midnight drive" />
+            </label>
+            <label class="full-field">
+              <span>Style <em class="count"><span id="styleCount">0</span>/1000</em></span>
+              <input id="style" type="text" maxlength="1000" placeholder="synthwave, female vocals, 110 bpm, dreamy" />
+            </label>
+            <div class="tags" id="styleChips" aria-label="Style suggestions"></div>
+            <label class="full-field lyrics-field">
+              <span>Lyrics <em class="count"><span id="lyricsCount">0</span>/5000</em></span>
+              <textarea id="lyrics" rows="9" maxlength="5000" placeholder="[Verse]&#10;Neon on the windshield, city fading out&#10;&#10;[Chorus]&#10;We keep driving..."></textarea>
+            </label>
+
+            <details class="advanced full-field">
+              <summary class="label">Advanced controls</summary>
+              <div class="advanced-grid">
+                <label class="full-field">
+                  <span>Exclude styles</span>
+                  <input id="negativeTags" type="text" maxlength="1000" placeholder="heavy metal, distorted guitars" />
+                </label>
+                <label>
+                  <span>Vocals</span>
+                  <select id="vocalGender">
+                    <option value="">Any</option>
+                    <option value="f">Female</option>
+                    <option value="m">Male</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Variety</span>
+                  <select id="variety">
+                    <option value="0">Off — exact style</option>
+                    <option value="1" selected>Normal</option>
+                    <option value="2">High</option>
+                    <option value="3">Extra</option>
+                    <option value="4">Max</option>
+                  </select>
+                </label>
+                <label class="full-field range">
+                  <span>Length <output id="durationOut">auto</output></span>
+                  <input id="duration" type="range" min="0" max="360" step="10" value="0" />
+                </label>
+                <label class="full-field range">
+                  <span>Style adherence <output id="styleWeightOut">0.65</output></span>
+                  <input id="styleWeight" type="range" min="0" max="1" step="0.05" value="0.65" />
+                </label>
+                <label class="full-field range">
+                  <span>Weirdness <output id="weirdOut">0.50</output></span>
+                  <input id="weirdness" type="range" min="0" max="1" step="0.05" value="0.5" />
+                </label>
+              </div>
+            </details>
+          </div>
+
+          <div class="options-row full-field">
+            <label class="switch">
+              <input id="instrumental" type="checkbox" />
+              <b aria-hidden="true"></b>
+              <span>Instrumental</span>
+            </label>
+            <label class="model">
+              <span class="sr-only">Model</span>
+              <select id="model">
+                <option value="V6" selected>V6 · best quality</option>
+                <option value="V6_MINI">V6 Mini · fastest</option>
+                <option value="V6_WILD">V6 Wild · experimental</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="contact-submit-row">
+            <button class="button button-primary" id="submit" type="submit">
+              <span class="btn-label">Generate track</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+            <p class="form-status is-error" id="error" role="alert" hidden></p>
+          </div>
+        </form>
+      </section>
+
+      <section class="library" aria-labelledby="libTitle">
+        <div class="lib-head">
+          <div class="section-heading compact">
+            <h2 id="libTitle"><span aria-hidden="true">&gt;_</span> Your tracks</h2>
+          </div>
+          <button class="button button-small" id="clearAll" hidden>Clear list</button>
+        </div>
+
+        <div id="jobs"></div>
+
+        <div class="empty dot-grid" id="empty">
+          <p class="micro">no tracks yet</p>
+          <p>A first preview usually arrives in under a minute; the full tracks follow shortly after.</p>
+        </div>
+        <p class="micro note">Files are kept by the provider for 14 days. Download anything you want to keep.</p>
+      </section>
+    </div>
   </main>
 
   <div class="player" id="player" hidden>
     <img id="playerArt" alt="" />
     <div class="player-meta">
       <strong id="playerTitle"></strong>
-      <span id="playerTags"></span>
+      <span id="playerTags" class="micro"></span>
     </div>
     <audio id="audio" controls preload="none"></audio>
   </div>
@@ -152,13 +175,13 @@
   <template id="jobTpl">
     <article class="job">
       <header class="job-head">
-        <div>
-          <p class="job-prompt"></p>
-          <p class="job-meta"></p>
-        </div>
-        <span class="badge"></span>
+        <p class="job-prompt"></p>
+        <p class="job-meta micro"></p>
       </header>
-      <div class="progress"><span></span></div>
+      <div class="topology-status job-status">
+        <i></i><span class="status-text"></span>
+        <span class="signal" aria-hidden="true"><b></b><b></b><b></b><b></b></span>
+      </div>
       <div class="tracks"></div>
     </article>
   </template>
@@ -171,12 +194,12 @@
       </button>
       <div class="track-info">
         <strong class="t-title"></strong>
-        <span class="t-tags"></span>
-        <span class="t-dur"></span>
+        <span class="t-tags micro"></span>
+        <span class="t-dur micro"></span>
       </div>
       <div class="track-actions">
-        <button class="ghost small lyrics-btn">Lyrics</button>
-        <a class="ghost small dl" download target="_blank" rel="noopener">Download</a>
+        <button class="button button-small lyrics-btn">Lyrics</button>
+        <a class="button button-small button-secondary dl" download target="_blank" rel="noopener">Download</a>
       </div>
       <pre class="t-lyrics" hidden></pre>
     </div>

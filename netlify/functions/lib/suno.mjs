@@ -1,6 +1,6 @@
 // Shared helpers for talking to SunoAPI.org from Netlify Functions.
-// The API key is read from the SUNO_API_KEY environment variable and never
-// reaches the browser.
+// The API key is read from the SUNO_API (or SUNO_API_KEY) environment variable
+// and never reaches the browser.
 
 // Docs examples use apibox.erweima.ai; api.sunoapi.org is the branded host.
 // Both serve the same API. SUNO_API_BASE overrides the list if set.
@@ -16,9 +16,9 @@ export const json = (body, status = 200) =>
   });
 
 export async function suno(path, { method = "GET", body } = {}) {
-  const key = process.env.SUNO_API_KEY;
+  const key = (process.env.SUNO_API || process.env.SUNO_API_KEY || "").trim();
   if (!key) {
-    return { ok: false, status: 500, data: { code: 500, msg: "Server is missing SUNO_API_KEY. Add it in Netlify → Site configuration → Environment variables." } };
+    return { ok: false, status: 500, data: { code: 500, msg: "Server is missing the SUNO_API environment variable. Add it in Netlify → Site configuration → Environment variables." } };
   }
   let lastErr;
   for (const base of BASES) {
@@ -47,7 +47,7 @@ export async function suno(path, { method = "GET", body } = {}) {
 
 export const ERROR_HINTS = {
   400: "Invalid parameters.",
-  401: "Unauthorized — check the SUNO_API_KEY value.",
+  401: "Unauthorized — check the SUNO_API value in Netlify.",
   404: "Invalid request method or path.",
   405: "Rate limit exceeded.",
   413: "Prompt or style is too long.",

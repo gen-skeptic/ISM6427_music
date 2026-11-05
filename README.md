@@ -1,6 +1,6 @@
 # Waveform Studio — AI Music Generator
 
-Generate original songs from a short description or your own lyrics, powered by [SunoAPI.org](https://docs.sunoapi.org/). Built as a static site plus Netlify Functions, so it deploys to Netlify with no build step.
+Generate original songs from a short description or your own lyrics, powered by [SunoAPI.org](https://docs.sunoapi.org/). Built as a static site plus Netlify Functions, so it deploys to Netlify with no build step. Styled with the **Dautel Design System** (`public/dautel.css`, default theme Catppuccin Mocha; the header switcher offers Macchiato, Frappé, Latte and Dautel Original).
 
 ## Features
 - **Simple mode** — describe a song; lyrics are written for you.
@@ -22,7 +22,7 @@ The SunoAPI key lives only in the Netlify Functions (`netlify/functions/`); it i
 ## Deploy on Netlify
 1. In Netlify, **Add new site → Import an existing project** and pick this repo / `main` branch. `netlify.toml` already sets the publish folder (`public`) and functions folder, so leave the build command empty.
 2. Go to **Site configuration → Environment variables** and add:
-   - `SUNO_API_KEY` = your SunoAPI.org key
+   - `SUNO_API` = your SunoAPI.org key (`SUNO_API_KEY` also works)
    - *(optional)* `SUNO_API_BASE` to force an API host (defaults to `https://api.sunoapi.org`, falling back to `https://apibox.erweima.ai`).
 3. Trigger a redeploy so the functions pick up the variable.
 
@@ -35,7 +35,7 @@ netlify dev
 
 ## Project layout
 ```
-public/                  static frontend (index.html, styles.css, app.js)
+public/                  static frontend (index.html, dautel.css = design system, styles.css = app layer, app.js)
 netlify/functions/       serverless API proxy (generate, status, credits, callback)
 netlify.toml             Netlify config
 ```

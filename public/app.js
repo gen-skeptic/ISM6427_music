@@ -70,7 +70,7 @@ STYLES.forEach((s) => {
 });
 function chip(text) {
   const b = document.createElement("button");
-  b.type = "button"; b.className = "chip"; b.textContent = text;
+  b.type = "button"; b.className = "tag"; b.textContent = text;
   return b;
 }
 
@@ -154,7 +154,7 @@ $("form").addEventListener("submit", async (e) => {
     showError(err.message);
   } finally {
     btn.disabled = false; btn.classList.remove("loading");
-    btn.querySelector(".btn-label").textContent = "Generate";
+    btn.querySelector(".btn-label").textContent = "Generate track";
   }
 });
 
@@ -183,10 +183,10 @@ function poll(job) {
 
 /* ---------- rendering ---------- */
 const STATUS = {
-  PENDING: { text: "Queued", cls: "working", pct: 12 },
-  TEXT_SUCCESS: { text: "Writing", cls: "working", pct: 40 },
-  FIRST_SUCCESS: { text: "Preview ready", cls: "working", pct: 75 },
-  SUCCESS: { text: "Done", cls: "done", pct: 100 },
+  PENDING: { text: "task.queued", cls: "working", step: 1 },
+  TEXT_SUCCESS: { text: "lyrics.written", cls: "working", step: 2 },
+  FIRST_SUCCESS: { text: "preview.ready", cls: "working", step: 3 },
+  SUCCESS: { text: "tracks.ready", cls: "mint", step: 4 },
 };
 const isFinal = (s) => s === "SUCCESS" || !STATUS[s];
 
@@ -211,22 +211,16 @@ function render() {
 
   for (const job of jobs) {
     const el = $("jobTpl").content.firstElementChild.cloneNode(true);
-    const st = STATUS[job.status] || { text: job.status === "TIMEOUT" ? "Timed out" : "Failed", cls: "failed", pct: 100 };
+    const st = STATUS[job.status] || { text: job.status === "TIMEOUT" ? "task.timed_out" : "task.failed", cls: "failed", step: 0 };
     el.querySelector(".job-prompt").textContent = job.label;
     el.querySelector(".job-meta").textContent =
       [job.mode === "custom" ? "Custom" : "Simple", job.model.replace("_", " "), job.instrumental ? "Instrumental" : null, timeAgo(job.createdAt)]
         .filter(Boolean).join(" · ");
-    const badge = el.querySelector(".badge");
-    badge.textContent = st.text; badge.classList.add(st.cls);
-    el.querySelector(".progress span").style.width = st.pct + "%";
-    if (job.status === "SUCCESS") el.classList.add("complete");
-    if (st.cls === "failed") {
-      el.classList.add("error");
-      const p = document.createElement("p");
-      p.className = "job-error";
-      p.textContent = job.error || "Something went wrong.";
-      el.append(p);
-    }
+    const line = el.querySelector(".job-status");
+    line.classList.add(st.cls);
+    line.dataset.step = st.step;
+    el.querySelector(".status-text").textContent =
+      st.cls === "failed" ? `${st.text} · ${job.error || "something went wrong"}` : st.text;
 
     const list = el.querySelector(".tracks");
     for (const t of job.tracks) list.append(trackCard(t, job));
@@ -306,10 +300,11 @@ async function refreshCredits() {
     const res = await fetch("/api/credits");
     const data = await res.json();
     if (!res.ok || data.credits == null) throw new Error();
-    $("creditsValue").textContent = `${Number(data.credits).toLocaleString()} credits`;
-    box.classList.toggle("ok", data.credits >= 20);
+    $("creditsValue").textContent = `credits ${Number(data.credits).toLocaleString()}`;
+    box.classList.remove("unknown");
     box.classList.toggle("low", data.credits < 20);
   } catch {
+    box.classList.add("unknown");
     $("creditsValue").textContent = "credits unavailable";
   }
 }
@@ -318,6 +313,14 @@ $("clearAll").addEventListener("click", () => {
   if (!confirm("Remove all tracks from this list? (Download any you want to keep first.)")) return;
   timers.forEach(clearTimeout); timers.clear();
   jobs.length = 0; save(); render();
+});
+
+/* ---------- theme ---------- */
+const themeSel = $("theme");
+themeSel.value = document.documentElement.dataset.theme || "mocha";
+themeSel.addEventListener("change", () => {
+  document.documentElement.dataset.theme = themeSel.value;
+  try { localStorage.setItem("waveform.theme", themeSel.value); } catch { /* ignore */ }
 });
 
 /* ---------- boot ---------- */
