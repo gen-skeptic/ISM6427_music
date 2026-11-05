@@ -140,3 +140,8 @@ body { padding-bottom: 110px; }
   .studio-form, .advanced-grid { grid-template-columns: 1fr; }
   .contact-submit-row .button { width: 100%; }
 }
+
+/* Example track shipped with the app */
+.job.is-example { border-color: var(--lavender); }
+.job.is-example .job-status { --accent: var(--lavender); }
+.job.is-example .job-status > i { background: var(--lavender); }

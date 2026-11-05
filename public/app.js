@@ -203,24 +203,57 @@ function timeAgo(t) {
   return h < 24 ? `${h} h ago` : new Date(t).toLocaleDateString();
 }
 
+let examples = [];
+
+async function loadExamples() {
+  try {
+    const res = await fetch("/examples/examples.json", { cache: "no-cache" });
+    if (!res.ok) return;
+    const list = await res.json();
+    examples = (Array.isArray(list) ? list : []).map((x, i) => ({
+      taskId: `example-${i}`,
+      example: true,
+      label: x.label || x.title || "Example track",
+      mode: x.mode || "simple",
+      model: x.model || "V6",
+      instrumental: Boolean(x.instrumental),
+      status: "SUCCESS",
+      tracks: [{
+        id: `example-${i}`,
+        title: x.title || "Example track",
+        tags: x.tags || "",
+        lyrics: x.lyrics || "",
+        duration: x.duration || null,
+        audioUrl: x.src,
+        imageUrl: x.image || "",
+        local: true,
+      }],
+    }));
+    render();
+  } catch { /* no examples */ }
+}
+
 function render() {
   const root = $("jobs");
   root.replaceChildren();
   $("empty").hidden = jobs.length > 0;
   $("clearAll").hidden = jobs.length === 0;
 
-  for (const job of jobs) {
+  for (const job of [...jobs, ...examples]) {
     const el = $("jobTpl").content.firstElementChild.cloneNode(true);
     const st = STATUS[job.status] || { text: job.status === "TIMEOUT" ? "task.timed_out" : "task.failed", cls: "failed", step: 0 };
     el.querySelector(".job-prompt").textContent = job.label;
-    el.querySelector(".job-meta").textContent =
-      [job.mode === "custom" ? "Custom" : "Simple", job.model.replace("_", " "), job.instrumental ? "Instrumental" : null, timeAgo(job.createdAt)]
-        .filter(Boolean).join(" · ");
+    el.querySelector(".job-meta").textContent = job.example
+      ? ["Example", job.model.replace("_", " "), job.instrumental ? "Instrumental" : null].filter(Boolean).join(" · ")
+      : [job.mode === "custom" ? "Custom" : "Simple", job.model.replace("_", " "), job.instrumental ? "Instrumental" : null, timeAgo(job.createdAt)]
+          .filter(Boolean).join(" · ");
+    if (job.example) el.classList.add("is-example");
     const line = el.querySelector(".job-status");
     line.classList.add(st.cls);
     line.dataset.step = st.step;
     el.querySelector(".status-text").textContent =
-      st.cls === "failed" ? `${st.text} · ${job.error || "something went wrong"}` : st.text;
+      st.cls === "failed" ? `${st.text} · ${job.error || "something went wrong"}`
+        : job.example ? "example.track" : st.text;
 
     const list = el.querySelector(".tracks");
     for (const t of job.tracks) list.append(trackCard(t, job));
@@ -245,9 +278,20 @@ function trackCard(t, job) {
   if (current && current === src) el.classList.add("playing");
 
   const dl = el.querySelector(".dl");
-  if (t.audioUrl) {
+  const filename = `${(t.title || "track").replace(/[^\w\- ()]+/g, "").trim() || "track"}.mp3`;
+  if (t.local) {
+    // Same-origin file: the download attribute works directly.
     dl.href = t.audioUrl;
-    dl.download = `${(t.title || "track").replace(/[^\w\- ]+/g, "")}.mp3`;
+    dl.download = filename;
+    dl.removeAttribute("target");
+  } else if (t.audioUrl) {
+    // Cross-origin file: browsers ignore download=, so fetch it through
+    // /api/download, which replies with Content-Disposition: attachment.
+    const proxied = `/api/download?taskId=${encodeURIComponent(job.taskId)}&id=${encodeURIComponent(t.id)}&name=${encodeURIComponent(t.title || "track")}`;
+    dl.href = proxied;
+    dl.download = filename;
+    dl.removeAttribute("target");
+    dl.addEventListener("click", (e) => { e.preventDefault(); saveTrack(dl, proxied, t.audioUrl, filename); });
   } else {
     dl.setAttribute("aria-disabled", "true");
     dl.removeAttribute("href");
@@ -264,6 +308,30 @@ function trackCard(t, job) {
     });
   }
   return el;
+}
+
+async function saveTrack(btn, proxied, original, filename) {
+  if (btn.dataset.busy) return;
+  btn.dataset.busy = "1";
+  const label = btn.textContent;
+  btn.textContent = "Saving…";
+  try {
+    const res = await fetch(proxied);
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).msg || `HTTP ${res.status}`);
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    btn.textContent = "Saved";
+  } catch (err) {
+    // Last resort: open the original file so it can be saved from the browser.
+    window.open(original, "_blank", "noopener");
+    btn.textContent = "Opened";
+    console.warn("Download failed:", err.message);
+  } finally {
+    setTimeout(() => { btn.textContent = label; delete btn.dataset.busy; }, 2000);
+  }
 }
 
 /* ---------- player ---------- */
@@ -325,5 +393,6 @@ themeSel.addEventListener("change", () => {
 
 /* ---------- boot ---------- */
 render();
+loadExamples();
 refreshCredits();
 jobs.filter((j) => !isFinal(j.status)).forEach(poll);
