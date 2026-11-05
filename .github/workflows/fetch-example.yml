@@ -1,0 +1,26 @@
+# One-time helper: downloads an example song into public/examples/ and
+# commits it. Removed again right after it runs.
+name: Fetch example track
+on:
+  push:
+    branches: [claude/upbeat-feynman-7xqgj1]
+    paths: [.github/workflows/fetch-example.yml]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download MP3
+        run: |
+          curl -fsSL --retry 3 -o public/examples/example-2.mp3 \
+            "https://tempfile.aiquickdraw.com/r/5ec16a07-de31-4551-9c80-1c7ad52f7078.mp3"
+          file public/examples/example-2.mp3
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/examples/example-2.mp3
+          git commit -m "Add second example track MP3"
+          git push
