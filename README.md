@@ -7,7 +7,8 @@ Generate original songs from a short description or your own lyrics, powered by 
 - **Custom mode** — title, style tags, your own lyrics, excluded styles, vocal gender, length (10 s–6 min), style adherence, weirdness and variety.
 - Instrumental toggle and model picker (V6, V6 Mini, V6 Wild).
 - Live progress (queued → writing → preview → done), with a streaming preview as soon as the first take is ready.
-- Built-in player, lyrics view and MP3 download. Track history is saved in the browser.
+- Built-in player, lyrics view and one-click MP3 download (saved as a file, not opened in a tab). Track history is saved in the browser.
+- Example tracks ship with the app: add an MP3 to `public/examples/` and an entry to `public/examples/examples.json` (`title`, `label`, `tags`, `src`, `duration`, `lyrics`).
 - Remaining SunoAPI credit balance in the header.
 
 ## How it works
@@ -15,6 +16,7 @@ Generate original songs from a short description or your own lyrics, powered by 
 browser ──► /api/generate  ──► POST  /api/v1/generate             (returns taskId)
         ──► /api/status    ──► GET   /api/v1/generate/record-info  (polled every 5 s)
         ──► /api/credits   ──► GET   /api/v1/generate/credit
+        ──► /api/download  ──► record-info lookup, then streams the MP3 as an attachment
 SunoAPI ──► /api/callback  (required callBackUrl; acknowledged only, the app polls)
 ```
 The SunoAPI key lives only in the Netlify Functions (`netlify/functions/`); it is never sent to the browser.
@@ -36,6 +38,7 @@ netlify dev
 ## Project layout
 ```
 public/                  static frontend (index.html, dautel.css = design system, styles.css = app layer, app.js)
-netlify/functions/       serverless API proxy (generate, status, credits, callback)
+netlify/functions/       serverless API proxy (generate, status, credits, download, callback)
+public/examples/         example tracks shown in the library
 netlify.toml             Netlify config
 ```
