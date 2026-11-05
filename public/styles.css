@@ -110,10 +110,16 @@ body { padding-bottom: 110px; }
 @media (max-width: 560px) { .cover { width: 56px; height: 56px; } }
 .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cover img:not([src]) { visibility: hidden; }
-.play-icon { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 55%, transparent); opacity: 0; transition: opacity 160ms ease; }
-.play-icon::before { content: ""; margin-left: 3px; border-left: 13px solid var(--blue); border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
-.cover:hover .play-icon, .cover:focus-visible .play-icon, .track-card.playing .play-icon { opacity: 1; }
-.track-card.playing .play-icon::before { width: 12px; height: 14px; margin: 0; border: 0; background: linear-gradient(90deg, var(--blue) 0 35%, transparent 35% 65%, var(--blue) 65%); }
+/* Always-visible play control: square tile (radius-sm), blue triangle; inverts on hover; pause bars while playing. */
+.play-icon { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 35%, transparent); transition: background 160ms ease; }
+.play-icon::after { content: ""; position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%); border: var(--stroke-hairline) solid var(--blue); border-radius: var(--radius-sm); background: var(--ink); transition: background 160ms ease; }
+.play-icon::before { content: ""; position: relative; z-index: 1; margin-left: 3px; border-left: 11px solid var(--blue); border-top: 7px solid transparent; border-bottom: 7px solid transparent; transition: border-color 160ms ease; }
+.cover:hover .play-icon, .cover:focus-visible .play-icon { background: color-mix(in srgb, var(--ink) 15%, transparent); }
+.cover:hover .play-icon::after, .cover:focus-visible .play-icon::after { background: var(--blue); }
+.cover:hover .play-icon::before, .cover:focus-visible .play-icon::before { border-left-color: var(--on-accent); }
+.track-card.playing .play-icon::before { width: 10px; height: 12px; margin: 0; border: 0; background: linear-gradient(90deg, var(--blue) 0 35%, transparent 35% 65%, var(--blue) 65%); }
+.track-card.playing .cover:hover .play-icon::before { background: linear-gradient(90deg, var(--on-accent) 0 35%, transparent 35% 65%, var(--on-accent) 65%); }
+.cover:disabled .play-icon { opacity: 0.4; }
 .cover:disabled { cursor: wait; }
 .track-info { display: flex; flex-direction: column; min-width: 0; font-family: var(--font-mono); }
 .t-title { color: var(--text); font-size: 0.92rem; font-weight: 620; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
