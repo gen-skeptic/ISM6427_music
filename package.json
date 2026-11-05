@@ -1,0 +1,13 @@
+{
+  "name": "ism6427-music",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI music generator powered by SunoAPI.org, deployed on Netlify",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
